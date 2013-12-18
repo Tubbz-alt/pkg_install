@@ -203,8 +203,11 @@ pkg_do(char *pkg)
 	    pkg_printf("%SDescription:\n%e\n", InfoPrefix, p);
 	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p))
 		pkg_printf("%SInstall notice:\n%M\n", InfoPrefix, p);
-	if (Flags & SHOW_PLIST)
-	    show_plist("Packing list:\n", &plist, (plist_t)0, TRUE);
+	if (Flags & SHOW_PLIST) {
+	    char *out = NULL;
+	    pkg_old_emit_content(p, &out);
+	    printf("%sPacking list:\n%s\n", InfoPrefix, out);
+	}
 	if (Flags & SHOW_REQUIRE && fexists(REQUIRE_FNAME))
 	    show_file("Requirements script:\n", REQUIRE_FNAME);
 	if ((Flags & SHOW_INSTALL) && fexists(INSTALL_FNAME))
