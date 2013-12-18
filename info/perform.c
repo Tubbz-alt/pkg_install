@@ -265,6 +265,9 @@ pkg_do(char *pkg)
 	if (!Quiet)
 	    puts(InfoPrefix);
     }
+
+    pkg_free(p);
+
     return (code ? 1 : 0);
 }
 
