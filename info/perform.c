@@ -104,6 +104,7 @@ pkg_do(char *pkg)
     const char *cp = NULL;
     int code = 0;
     struct pkg *p;
+    struct pkg_dep *d;
 
     if (isURL(pkg)) {
 	if ((cp = fileGetURL(NULL, pkg, KeepPackage)) != NULL) {
@@ -177,16 +178,20 @@ pkg_do(char *pkg)
     else {
 	/* Start showing the package contents */
 	if (!Quiet)
-	    pkg_printf("%SInformation for %n-%v:\n\n", InfoPrefix, pkg, pkg);
+	    pkg_printf("%SInformation for %n-%v:\n\n", InfoPrefix, p, p);
 	else if (QUIET)
-	    pkg_printf("%s%n-%v:", InfoPrefix, pkg, pkg);
+	    pkg_printf("%S%n-%v:", InfoPrefix, p, p);
 	if (Flags & SHOW_COMMENT) {
 	    if (!Quiet)
 		    printf("Comment:\n");
-	    pkg_printf("%c\n", pkg);
+	    pkg_printf("%c\n", p);
 	}
-	if (Flags & SHOW_DEPEND)
-	    show_plist("Depends on:\n", &plist, PLIST_PKGDEP, FALSE);
+	if (Flags & SHOW_DEPEND) {
+	    printf("%sDepends on\n", InfoPrefix);
+	    d = NULL;
+	    while (pkg_deps(p, &d) == EPKG_OK)
+		    pkg_printf("%dn-%dv\n", d, d);
+	}
 	if ((Flags & SHOW_REQBY) && !isemptyfile(REQUIRED_BY_FNAME))
 	    show_file("Required by:\n", REQUIRED_BY_FNAME);
 	if (Flags & SHOW_DESC)
