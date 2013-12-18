@@ -188,13 +188,15 @@ pkg_do(char *pkg)
 	    pkg_printf("%c\n", p);
 	}
 	if (Flags & SHOW_DEPEND) {
-	    printf("%sDepends on\n", InfoPrefix);
+		if (!Quiet)
+			printf("%sDepends on\n", InfoPrefix);
 	    d = NULL;
 	    while (pkg_deps(p, &d) == EPKG_OK)
 		    pkg_printf("%dn-%dv\n", d, d);
 	}
 	if ((Flags & SHOW_REQBY)) {
-	    printf("%sRequired by:\n", InfoPrefix);
+		if (!Quiet)
+			printf("%sRequired by:\n", InfoPrefix);
 	    d = NULL;
 	    while (pkg_rdeps(p, &d) == EPKG_OK)
 		pkg_printf("%rn-%rv\n", d, d);
@@ -204,8 +206,11 @@ pkg_do(char *pkg)
 		printf("%sDescription;\n", InfoPrefix);
 	    pkg_printf("%e\n", p);
 	}
-	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p))
-		pkg_printf("%SInstall notice:\n%M\n", InfoPrefix, p);
+	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p)) {
+		if (!Quiet)
+			printf("%sInstall notice:\n", InfoPrefix);
+		pkg_printf("%M\n", p);
+	}
 	if (Flags & SHOW_PLIST) {
 	    char *out = NULL;
 	    pkg_old_emit_content(p, &out);
@@ -245,10 +250,15 @@ pkg_do(char *pkg)
 	}
 	if ((Flags & SHOW_CKSUM) && installed)
 	    code += show_cksum("Mismatched Checksums:\n", &plist);
-	if (Flags & SHOW_ORIGIN)
-	    show_origin("Origin:\n", &plist);
+	if (Flags & SHOW_ORIGIN) {
+	    if (!Quiet)
+	       printf("%sOrigin:\n", InfoPrefix);
+	    pkg_printf("%o\n", p);
+	}
 	if (Flags & SHOW_FMTREV)
-	    show_fmtrev("Packing list format revision:\n", &plist);
+	    if (!Quiet)
+		printf("%sPacking list format revision:\n", InfoPrefix);
+	    printf("1.1\n");
 	if (!Quiet)
 	    puts(InfoPrefix);
     }
