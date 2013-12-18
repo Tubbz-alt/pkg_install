@@ -105,6 +105,7 @@ pkg_do(char *pkg)
     int code = 0;
     struct pkg *p;
     struct pkg_dep *d;
+    struct pkg_file *f;
 
     if (isURL(pkg)) {
 	if ((cp = fileGetURL(NULL, pkg, KeepPackage)) != NULL) {
@@ -192,12 +193,16 @@ pkg_do(char *pkg)
 	    while (pkg_deps(p, &d) == EPKG_OK)
 		    pkg_printf("%dn-%dv\n", d, d);
 	}
-	if ((Flags & SHOW_REQBY) && !isemptyfile(REQUIRED_BY_FNAME))
-	    show_file("Required by:\n", REQUIRED_BY_FNAME);
+	if ((Flags & SHOW_REQBY)) {
+	    printf("%sRequired by:\n", InfoPrefix);
+	    d = NULL;
+	    while (pkg_rdeps(p, &d) == EPKG_OK)
+		pkg_printf("%rn-%rv\n", d, d);
+	}
 	if (Flags & SHOW_DESC)
-	    show_file("Description:\n", DESC_FNAME);
-	if ((Flags & SHOW_DISPLAY) && fexists(DISPLAY_FNAME))
-	    show_file("Install notice:\n", DISPLAY_FNAME);
+	    pkg_printf("%SDescription:\n%e\n", InfoPrefix, p);
+	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p))
+		pkg_printf("%SInstall notice:\n%M\n", InfoPrefix, p);
 	if (Flags & SHOW_PLIST)
 	    show_plist("Packing list:\n", &plist, (plist_t)0, TRUE);
 	if (Flags & SHOW_REQUIRE && fexists(REQUIRE_FNAME))
@@ -214,8 +219,12 @@ pkg_do(char *pkg)
 	    show_file("mtree file:\n", MTREE_FNAME);
 	if (Flags & SHOW_PREFIX)
 	    show_plist("Prefix(s):\n", &plist, PLIST_CWD, FALSE);
-	if (Flags & SHOW_FILES)
-	    show_files("Files:\n", &plist);
+	if (Flags & SHOW_FILES) {
+	    printf("%sFiles:\n", InfoPrefix);
+	    f = NULL;
+	    while (pkg_files(p, &f) == EPKG_OK)
+		pkg_printf("%Fn\n", f);
+	}
 	if ((Flags & SHOW_SIZE) && installed)
 	    show_size("Package Size:\n", &plist);
 	if ((Flags & SHOW_CKSUM) && installed)

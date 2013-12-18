@@ -342,7 +342,7 @@ getpkg(const char *name)
 	    return (NULL);
 
     pkg = NULL;
-    pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC|PKG_LOAD_DEPS);
+    pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC|PKG_LOAD_DEPS|PKG_LOAD_RDEPS|PKG_LOAD_FILES);
 
     pkgdb_it_free(it);
 
