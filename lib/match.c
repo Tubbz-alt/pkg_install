@@ -26,6 +26,7 @@ __FBSDID("$FreeBSD: stable/10/usr.sbin/pkg_install/lib/match.c 228990 2011-12-30
 #include <fnmatch.h>
 #include <fts.h>
 #include <regex.h>
+#include <pkg.h>
 
 /*
  * Simple structure representing argv-like
@@ -45,9 +46,9 @@ static int fname_cmp(const FTSENT * const *, const FTSENT * const *);
 
 /*
  * Function to query names of installed packages.
- * MatchType	- one of MATCH_ALL, MATCH_EREGEX, MATCH_REGEX, MATCH_GLOB, MATCH_NGLOB;
+ * MatchType	- one of LEGACY_MATCH_ALL, LEGACY_MATCH_EREGEX, LEGACY_MATCH_REGEX, LEGACY_MATCH_GLOB, LEGACY_MATCH_NGLOB;
  * patterns	- NULL-terminated list of glob or regex patterns
- *		  (could be NULL for MATCH_ALL);
+ *		  (could be NULL for LEGACY_MATCH_ALL);
  * retval	- return value (could be NULL if you don't want/need
  *		  return value).
  * Returns NULL-terminated list with matching names.
@@ -55,15 +56,20 @@ static int fname_cmp(const FTSENT * const *, const FTSENT * const *);
  * not be altered by the caller.
  */
 char **
-matchinstalled(match_t MatchType, char **patterns, int *retval)
+matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 {
-    int i, errcode, len;
-    char *matched;
-    const char *paths[2] = {LOG_DIR, NULL};
+    int len;
     static struct store *store = NULL;
-    FTS *ftsp;
-    FTSENT *f;
-    Boolean *lmatched = NULL;
+    char pkgname[MAXPATHLEN];
+    struct pkgdb_it *it = NULL;
+    struct pkgdb *db = NULL;
+    struct pkg *pkg;
+
+    if (!pkg_initialized())
+	return (NULL);
+
+    if (pkgdb_open(&db, PKGDB_DEFAULT) != EPKG_OK)
+	return (NULL);
 
     store = storecreate(store);
     if (store == NULL) {
@@ -75,68 +81,54 @@ matchinstalled(match_t MatchType, char **patterns, int *retval)
     if (retval != NULL)
 	*retval = 0;
 
-    if (!isdir(paths[0])) {
-	if (retval != NULL)
-	    *retval = 1;
-	return NULL;
-	/* Not reached */
-    }
-
-    /* Count number of patterns */
-    if (patterns != NULL) {
-	for (len = 0; patterns[len]; len++) {}
-	lmatched = alloca(sizeof(*lmatched) * len);
-	if (lmatched == NULL) {
-	    warnx("%s(): alloca() failed", __func__);
-	    if (retval != NULL)
-		*retval = 1;
-	    return NULL;
-    	} 
-    } else
-	len = 0;
-    
-    for (i = 0; i < len; i++)
-	lmatched[i] = FALSE;
-
-    ftsp = fts_open((char * const *)(uintptr_t)paths, FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT, fname_cmp);
-    if (ftsp != NULL) {
-	while ((f = fts_read(ftsp)) != NULL) {
-	    if (f->fts_info == FTS_D && f->fts_level == 1) {
-		fts_set(ftsp, f, FTS_SKIP);
-		matched = NULL;
-		errcode = 0;
-		if (MatchType == MATCH_ALL)
-		    matched = f->fts_name;
-		else 
-		    for (i = 0; patterns[i]; i++) {
-			errcode = pattern_match(MatchType, patterns[i], f->fts_name);
-			if (errcode == 1) {
-			    matched = f->fts_name;
-			    lmatched[i] = TRUE;
-			    errcode = 0;
-			}
-			if (matched != NULL || errcode != 0)
-			    break;
-		    }
-		if (errcode == 0 && matched != NULL)
-		    errcode = storeappend(store, matched);
-		if (errcode != 0) {
-		    if (retval != NULL)
-			*retval = 1;
-		    return NULL;
-		    /* Not reached */
-		}
+    if (patterns != NULL && MatchType == LEGACY_MATCH_ALL) {
+	    if ((it = pkgdb_query(db, NULL, MATCH_ALL)) == NULL) {
+		pkgdb_close(db);
+		return (NULL);
 	    }
-	}
-	fts_close(ftsp);
-    }
 
-    if (MatchType == MATCH_GLOB) {
-	for (i = 0; i < len; i++)
-	    if (lmatched[i] == FALSE)
-		storeappend(store, patterns[i]);
-    }
+	    pkg = NULL;
+	    while (pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC) == EPKG_OK) {
+		pkg_snprintf(pkgname, sizeof(pkgname), "%n-%v", pkg, pkg);
+		storeappend(store, pkgname);
+	    }
+	    pkgdb_it_free(it);
+	    pkgdb_close(db);
+    } else if (patterns != NULL) {
+	for (len = 0; patterns[len]; len++) {
+	    match_t m;
+	    switch (MatchType) {
+	    case LEGACY_MATCH_EXACT:
+		    m = MATCH_EXACT;
+		    break;
+	    case LEGACY_MATCH_GLOB:
+		    m = MATCH_GLOB;
+		    break;
+	    case LEGACY_MATCH_NGLOB:
+		    /* XXX unsupported yet */
+		    pkgdb_close(db);
+		    return (NULL);
+	    case LEGACY_MATCH_REGEX:
+	    case LEGACY_MATCH_EREGEX:
+		    m = MATCH_REGEX;
+		    break;
+	    case LEGACY_MATCH_ALL:
+		    m = MATCH_ALL;
+		    break;
+	    }
+	    if ((it = pkgdb_query(db, patterns[len], m)) == NULL)
+		    continue;
 
+	    pkg = NULL;
+	    while (pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC) == EPKG_OK) {
+		pkg_snprintf(pkgname, sizeof(pkgname), "%n-%v", pkg, pkg);
+		storeappend(store, pkgname);
+	    }
+	    pkgdb_it_free(it);
+    	}
+ 	pkgdb_close(db);
+    }
+    
     if (store->used == 0)
 	return NULL;
     else
@@ -144,7 +136,7 @@ matchinstalled(match_t MatchType, char **patterns, int *retval)
 }
 
 int
-pattern_match(match_t MatchType, char *pattern, const char *pkgname)
+pattern_match(legacy_match_t MatchType, char *pattern, const char *pkgname)
 {
     int errcode = 0;
     const char *fname = pkgname;
@@ -170,18 +162,18 @@ pattern_match(match_t MatchType, char *pattern, const char *pkgname)
     }
 
     switch (MatchType) {
-    case MATCH_EREGEX:
-    case MATCH_REGEX:
-	errcode = rex_match(pattern, fname, MatchType == MATCH_EREGEX ? 1 : 0);
+    case LEGACY_MATCH_EREGEX:
+    case LEGACY_MATCH_REGEX:
+	errcode = rex_match(pattern, fname, MatchType == LEGACY_MATCH_EREGEX ? 1 : 0);
 	break;
-    case MATCH_NGLOB:
-    case MATCH_GLOB:
+    case LEGACY_MATCH_NGLOB:
+    case LEGACY_MATCH_GLOB:
 	errcode = (csh_match(pattern, fname, 0) == 0) ? 1 : 0;
 	break;
-    case MATCH_EXACT:
+    case LEGACY_MATCH_EXACT:
 	errcode = (strcmp(pattern, fname) == 0) ? 1 : 0;
 	break;
-    case MATCH_ALL:
+    case LEGACY_MATCH_ALL:
 	errcode = 1;
 	break;
     default:
@@ -247,7 +239,7 @@ matchallbyorigin(const char **origins, int *retval)
     if (retval != NULL)
 	*retval = 0;
 
-    installed = matchinstalled(MATCH_ALL, NULL, retval);
+    installed = matchinstalled(LEGACY_MATCH_ALL, NULL, retval);
     if (installed == NULL)
 	return NULL;
 

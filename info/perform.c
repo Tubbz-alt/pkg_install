@@ -25,6 +25,7 @@ __FBSDID("$FreeBSD: stable/10/usr.sbin/pkg_install/info/perform.c 240682 2012-09
 #include "info.h"
 #include <err.h>
 #include <signal.h>
+#include <pkg.h>
 
 static int pkg_do(char *);
 static int find_pkg(struct which_head *);
@@ -41,6 +42,8 @@ pkg_perform(char **pkgs)
     int i, errcode;
 
     signal(SIGINT, cleanup);
+    if (pkg_init(NULL, NULL))
+	errx(1, "Cannot parse configuration file");
 
     /* Overriding action? */
     if (Flags & SHOW_PKGNAME) {
@@ -54,7 +57,7 @@ pkg_perform(char **pkgs)
 	return find_pkgs_by_origin(LookUpOrigin);
     }
 
-    if (MatchType != MATCH_EXACT) {
+    if (MatchType != LEGACY_MATCH_EXACT) {
 	matched = matchinstalled(MatchType, pkgs, &errcode);
 	if (errcode != 0)
 	    return 1;
@@ -63,14 +66,14 @@ pkg_perform(char **pkgs)
 	if (matched != NULL)
 	    pkgs = matched;
 	else switch (MatchType) {
-	    case MATCH_GLOB:
+	    case LEGACY_MATCH_GLOB:
 		break;
-	    case MATCH_ALL:
+	    case LEGACY_MATCH_ALL:
 		warnx("no packages installed");
 		return 0;
 		/* Not reached */
-	    case MATCH_REGEX:
-	    case MATCH_EREGEX:
+	    case LEGACY_MATCH_REGEX:
+	    case LEGACY_MATCH_EREGEX:
 		warnx("no packages match pattern(s)");
 		return 1;
 		/* Not reached */
@@ -240,6 +243,7 @@ pkg_do(char *pkg)
 void
 cleanup(int sig)
 {
+	printf("ici\n");
     static int in_cleanup = 0;
 
     if (!in_cleanup) {
@@ -363,7 +367,7 @@ find_pkg(struct which_head *which_list)
 	    warnx("%s: %s", wp->file, msg);
     }
 
-    installed = matchinstalled(MATCH_ALL, NULL, &errcode);
+    installed = matchinstalled(LEGACY_MATCH_ALL, NULL, &errcode);
     if (installed == NULL)
         return errcode;
  
@@ -461,7 +465,7 @@ matched_packages(char **pkgs)
     char **matched;
     int i, errcode;
 
-    matched = matchinstalled(MatchType == MATCH_GLOB ? MATCH_NGLOB : MatchType, pkgs, &errcode);
+    matched = matchinstalled(MatchType == LEGACY_MATCH_GLOB ? LEGACY_MATCH_NGLOB : MatchType, pkgs, &errcode);
 
     if (errcode != 0 || matched == NULL)
 	return 1;

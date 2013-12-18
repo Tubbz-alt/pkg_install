@@ -69,7 +69,7 @@ extern char *InfoPrefix;
 extern char PlayPen[];
 extern char *CheckPkg;
 extern char *LookUpOrigin;
-extern match_t MatchType;
+extern legacy_match_t MatchType;
 extern struct which_head *whead;
 
 extern void	show_file(const char *, const char *);

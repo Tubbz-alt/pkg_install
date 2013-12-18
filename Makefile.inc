@@ -4,8 +4,9 @@
 
 LIBINSTALL=    ${.OBJDIR}/../lib/libinstall.a
 
+CFLAGS+=		-I/usr/local/include
 DPADD+=                ${LIBUTIL}
-LDADD+=                -lutil
+LDADD+=                -lutil -L/usr/local/lib -lpkg
 
 .if ${MK_OPENSSL} != "no" && \
     defined(LDADD) && ${LDADD:M-lfetch} != ""

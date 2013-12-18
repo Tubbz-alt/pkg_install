@@ -29,7 +29,7 @@ __FBSDID("$FreeBSD: stable/10/usr.sbin/pkg_install/info/main.c 241830 2012-10-22
 #include "info.h"
 
 int	Flags		= 0;
-match_t	MatchType	= MATCH_GLOB;
+legacy_match_t	MatchType	= LEGACY_MATCH_GLOB;
 Boolean QUIET		= FALSE;
 Boolean UseBlkSz	= FALSE;
 char *InfoPrefix	= (char *)(uintptr_t)"";
@@ -75,13 +75,13 @@ main(int argc, char **argv)
 
     pkgs = start = argv;
     if (argc == 1) {
-	MatchType = MATCH_ALL;
+	MatchType = LEGACY_MATCH_ALL;
 	Flags = SHOW_INDEX;
     }
     else while ((ch = getopt_long(argc, argv, opts, longopts, NULL)) != -1) {
 	switch(ch) {
 	case 'a':
-	    MatchType = MATCH_ALL;
+	    MatchType = LEGACY_MATCH_ALL;
 	    break;
 
 	case 'b':
@@ -128,7 +128,7 @@ main(int argc, char **argv)
 	    break;
 
 	case 'G':
-	    MatchType = MATCH_EXACT;
+	    MatchType = LEGACY_MATCH_EXACT;
 	    break;
 
 	case 'i':
@@ -199,11 +199,11 @@ main(int argc, char **argv)
 	    break;
 
 	case 'x':
-	    MatchType = MATCH_REGEX;
+	    MatchType = LEGACY_MATCH_REGEX;
 	    break;
 
 	case 'X':
-	    MatchType = MATCH_EREGEX;
+	    MatchType = LEGACY_MATCH_EREGEX;
 	    break;
 
 	case 'e':
@@ -255,7 +255,7 @@ main(int argc, char **argv)
 	 * Don't try to apply heuristics if arguments are regexs or if
 	 * the argument refers to an existing file.
 	 */
-	if (MatchType != MATCH_REGEX && MatchType != MATCH_EREGEX && !isfile(*argv) && !isURL(*argv))
+	if (MatchType != LEGACY_MATCH_REGEX && MatchType != LEGACY_MATCH_EREGEX && !isfile(*argv) && !isURL(*argv))
 	    while ((pkgs_split = strrchr(*argv, (int)'/')) != NULL) {
 		*pkgs_split++ = '\0';
 		/*
@@ -264,7 +264,7 @@ main(int argc, char **argv)
 		 * we've come across a trailing '/' and need to continue our
 		 * quest.
 		 */
-		if (isalnum(*pkgs_split) || ((MatchType == MATCH_GLOB) && \
+		if (isalnum(*pkgs_split) || ((MatchType == LEGACY_MATCH_GLOB) && \
 		    strpbrk(pkgs_split, "*?[]") != NULL)) {
 		    *argv = pkgs_split;
 		    break;
@@ -274,7 +274,7 @@ main(int argc, char **argv)
     }
 
     /* If no packages, yelp */
-    if (pkgs == start && MatchType != MATCH_ALL && !CheckPkg && 
+    if (pkgs == start && MatchType != LEGACY_MATCH_ALL && !CheckPkg && 
 	TAILQ_EMPTY(whead) && LookUpOrigin == NULL)
 	warnx("missing package name(s)"), usage();
     *pkgs = NULL;

@@ -119,9 +119,9 @@ enum _plist_t {
 typedef enum _plist_t plist_t;
 
 enum _match_t {
-    MATCH_ALL, MATCH_EXACT, MATCH_GLOB, MATCH_NGLOB, MATCH_EREGEX, MATCH_REGEX
+    LEGACY_MATCH_ALL, LEGACY_MATCH_EXACT, LEGACY_MATCH_GLOB, LEGACY_MATCH_NGLOB, LEGACY_MATCH_EREGEX, LEGACY_MATCH_REGEX
 };
-typedef enum _match_t match_t;
+typedef enum _match_t legacy_match_t;
 
 /* Types */
 typedef unsigned int Boolean;
@@ -218,11 +218,11 @@ int		pkg_perform(char **);
 int		real_main(int, char **);
 
 /* Query installed packages */
-char		**matchinstalled(match_t, char **, int *);
+char		**matchinstalled(legacy_match_t, char **, int *);
 char		**matchbyorigin(const char *, int *);
 char		***matchallbyorigin(const char **, int *);
 int		isinstalledpkg(const char *name);
-int		pattern_match(match_t MatchType, char *pattern, const char *pkgname);
+int		pattern_match(legacy_match_t MatchType, char *pattern, const char *pkgname);
 
 /* Dependencies */
 int		sortdeps(char **);
