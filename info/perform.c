@@ -33,6 +33,7 @@ static int cmp_path(const char *, const char *, const char *);
 static char *abspath(const char *);
 static int find_pkgs_by_origin(const char *);
 static int matched_packages(char **pkgs);
+struct pkgdb *db;
 
 int
 pkg_perform(char **pkgs)
@@ -44,6 +45,10 @@ pkg_perform(char **pkgs)
     signal(SIGINT, cleanup);
     if (pkg_init(NULL, NULL))
 	errx(1, "Cannot parse configuration file");
+
+    db = NULL;
+    if (pkgdb_open(&db, PKGDB_DEFAULT) != EPKG_OK)
+	errx(1, "Enable to open pkgdb");
 
     /* Overriding action? */
     if (Flags & SHOW_PKGNAME) {
@@ -85,6 +90,7 @@ pkg_perform(char **pkgs)
     for (i = 0; pkgs[i]; i++)
 	err_cnt += pkg_do(pkgs[i]);
 
+    pkgdb_close(db);
     return err_cnt;
 }
 
@@ -92,13 +98,12 @@ static int
 pkg_do(char *pkg)
 {
     Boolean installed = FALSE, isTMP = FALSE;
-    char log_dir[FILENAME_MAX];
     char fname[FILENAME_MAX];
     Package plist;
-    FILE *fp;
     struct stat sb;
     const char *cp = NULL;
     int code = 0;
+    struct pkg *p;
 
     if (isURL(pkg)) {
 	if ((cp = fileGetURL(NULL, pkg, KeepPackage)) != NULL) {
@@ -106,7 +111,7 @@ pkg_do(char *pkg)
 		upchuck("getcwd");
 	    isTMP = TRUE;
 	} else {
-	    goto bail;
+	    return (0);
 	}
     }
     else if (fexists(pkg) && isfile(pkg)) {
@@ -137,45 +142,25 @@ pkg_do(char *pkg)
 	    if (stat(fname, &sb) == FAIL) {
 	        warnx("can't stat package file '%s'", fname);
 	        code = 1;
-	        goto bail;
+	        return (0);
 	    }
 	    make_playpen(PlayPen, sb.st_size / 2);
 	    if (unpack(fname, "'+*'")) {
 		warnx("error during unpacking, no info for '%s' available", pkg);
 		code = 1;
-		goto bail;
+		return (0);
 	    }
 	}
     }
     /* It's not an uninstalled package, try and find it among the installed */
     else {
-	int isinstalled = isinstalledpkg(pkg);
-	if (isinstalled < 0) {
-	    warnx("the package info for package '%s' is corrupt", pkg);
-	    return 1;
-	} else if (isinstalled == 0) {
+	p = getpkg(pkg);
+	if (p == NULL) {
 	    warnx("can't find package '%s' installed or in a file!", pkg);
-	    return 1;
-	}
-	sprintf(log_dir, "%s/%s", LOG_DIR, pkg);
-	if (chdir(log_dir) == FAIL) {
-	    warnx("can't change directory to '%s'!", log_dir);
 	    return 1;
 	}
 	installed = TRUE;
     }
-
-    /* Suck in the contents list */
-    plist.head = plist.tail = NULL;
-    fp = fopen(CONTENTS_FNAME, "r");
-    if (!fp) {
-	warnx("unable to open %s file", CONTENTS_FNAME);
-	code = 1;
-	goto bail;
-    }
-    /* If we have a prefix, add it now */
-    read_plist(&plist, fp);
-    fclose(fp);
 
     /*
      * Index is special info type that has to override all others to make
@@ -185,16 +170,21 @@ pkg_do(char *pkg)
 	char tmp[FILENAME_MAX];
 
 	snprintf(tmp, FILENAME_MAX, "%-19s ", pkg);
-	show_index(tmp, COMMENT_FNAME);
+	if (!Quiet)
+		printf("%s%-19s", InfoPrefix, pkg);
+	pkg_printf("%c\n", p);
     }
     else {
 	/* Start showing the package contents */
 	if (!Quiet)
-	    printf("%sInformation for %s:\n\n", InfoPrefix, pkg);
+	    pkg_printf("%SInformation for %n-%v:\n\n", InfoPrefix, pkg, pkg);
 	else if (QUIET)
-	    printf("%s%s:", InfoPrefix, pkg);
-	if (Flags & SHOW_COMMENT)
-	    show_file("Comment:\n", COMMENT_FNAME);
+	    pkg_printf("%s%n-%v:", InfoPrefix, pkg, pkg);
+	if (Flags & SHOW_COMMENT) {
+	    if (!Quiet)
+		    printf("Comment:\n");
+	    pkg_printf("%c\n", pkg);
+	}
 	if (Flags & SHOW_DEPEND)
 	    show_plist("Depends on:\n", &plist, PLIST_PKGDEP, FALSE);
 	if ((Flags & SHOW_REQBY) && !isemptyfile(REQUIRED_BY_FNAME))
@@ -232,11 +222,6 @@ pkg_do(char *pkg)
 	if (!Quiet)
 	    puts(InfoPrefix);
     }
-    free_plist(&plist);
- bail:
-    leave_playpen();
-    if (isTMP)
-	unlink(fname);
     return (code ? 1 : 0);
 }
 

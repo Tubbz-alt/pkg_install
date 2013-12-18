@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pkg.h>
 
 /* Macros */
 #define SUCCESS	(0)
@@ -222,6 +223,7 @@ char		**matchinstalled(legacy_match_t, char **, int *);
 char		**matchbyorigin(const char *, int *);
 char		***matchallbyorigin(const char **, int *);
 int		isinstalledpkg(const char *name);
+struct pkg	*getpkg(const char *name);
 int		pattern_match(legacy_match_t MatchType, char *pattern, const char *pkgname);
 
 /* Dependencies */
@@ -239,5 +241,6 @@ extern Boolean	Fake;
 extern Boolean  Force;
 extern int	AutoAnswer;
 extern int	Verbose;
+extern struct pkgdb *db;
 
 #endif /* _INST_LIB_LIB_H_ */

@@ -62,13 +62,9 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
     static struct store *store = NULL;
     char pkgname[MAXPATHLEN];
     struct pkgdb_it *it = NULL;
-    struct pkgdb *db = NULL;
     struct pkg *pkg;
 
     if (!pkg_initialized())
-	return (NULL);
-
-    if (pkgdb_open(&db, PKGDB_DEFAULT) != EPKG_OK)
 	return (NULL);
 
     store = storecreate(store);
@@ -83,7 +79,6 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 
     if (patterns != NULL && MatchType == LEGACY_MATCH_ALL) {
 	    if ((it = pkgdb_query(db, NULL, MATCH_ALL)) == NULL) {
-		pkgdb_close(db);
 		return (NULL);
 	    }
 
@@ -93,7 +88,6 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 		storeappend(store, pkgname);
 	    }
 	    pkgdb_it_free(it);
-	    pkgdb_close(db);
     } else if (patterns != NULL) {
 	for (len = 0; patterns[len]; len++) {
 	    match_t m;
@@ -106,7 +100,6 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 		    break;
 	    case LEGACY_MATCH_NGLOB:
 		    /* XXX unsupported yet */
-		    pkgdb_close(db);
 		    return (NULL);
 	    case LEGACY_MATCH_REGEX:
 	    case LEGACY_MATCH_EREGEX:
@@ -126,7 +119,6 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 	    }
 	    pkgdb_it_free(it);
     	}
- 	pkgdb_close(db);
     }
     
     if (store->used == 0)
@@ -339,16 +331,23 @@ matchbyorigin(const char *origin, int *retval)
    }
 }
 
-/*
- * Small linked list to memoize results of isinstalledpkg().  A hash table
- * would be faster but for n ~= 1000 may be overkill.
- */
-struct iip_memo {
-	LIST_ENTRY(iip_memo) iip_link;
-	char	*iip_name;
-	int	 iip_result;
-};
-LIST_HEAD(, iip_memo) iip_memo = LIST_HEAD_INITIALIZER(iip_memo);
+struct pkg *
+getpkg(const char *name)
+{
+    struct pkgdb_it *it;
+    struct pkg *pkg = NULL;
+
+
+    if ((it = pkgdb_query(db, name, MATCH_EXACT)) == NULL)
+	    return (NULL);
+
+    pkg = NULL;
+    pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC);
+
+    pkgdb_it_free(it);
+
+    return (pkg);
+}
 
 /*
  * 
@@ -358,53 +357,22 @@ LIST_HEAD(, iip_memo) iip_memo = LIST_HEAD_INITIALIZER(iip_memo);
 int
 isinstalledpkg(const char *name)
 {
-    int result;
-    char *buf, *buf2;
-    struct iip_memo *memo;
+    int result = 0;
+    struct pkgdb_it *it;
+    struct pkg *pkg;
 
-    LIST_FOREACH(memo, &iip_memo, iip_link) {
-	if (strcmp(memo->iip_name, name) == 0)
-	    return memo->iip_result;
-    }
-    
-    buf2 = NULL;
-    asprintf(&buf, "%s/%s", LOG_DIR, name);
-    if (buf == NULL)
-	goto errout;
-    if (!isdir(buf) || access(buf, R_OK) == FAIL) {
-	result = 0;
-    } else {
-	asprintf(&buf2, "%s/%s", buf, CONTENTS_FNAME);
-	if (buf2 == NULL)
-	    goto errout;
 
-	if (!isfile(buf2) || access(buf2, R_OK) == FAIL)
-	    result = -1;
-	else
+    if ((it = pkgdb_query(db, name, MATCH_EXACT)) == NULL)
+	    return (-1);
+
+    pkg = NULL;
+    if (pkgdb_it_next(it, &pkg, PKG_LOAD_BASIC) == EPKG_OK)
 	    result = 1;
-    }
 
-    free(buf);
-    buf = strdup(name);
-    if (buf == NULL)
-	goto errout;
-    free(buf2);
-    buf2 = NULL;
+    pkgdb_it_free(it);
+    pkg_free(pkg);
 
-    memo = malloc(sizeof *memo);
-    if (memo == NULL)
-	goto errout;
-    memo->iip_name = buf;
-    memo->iip_result = result;
-    LIST_INSERT_HEAD(&iip_memo, memo, iip_link);
-    return result;
-
-errout:
-    if (buf != NULL)
-	free(buf);
-    if (buf2 != NULL)
-	free(buf2);
-    return -1;
+    return (result);
 }
 
 /*
