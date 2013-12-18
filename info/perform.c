@@ -270,7 +270,6 @@ pkg_do(char *pkg)
 void
 cleanup(int sig)
 {
-	printf("ici\n");
     static int in_cleanup = 0;
 
     if (!in_cleanup) {
