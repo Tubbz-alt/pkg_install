@@ -34,6 +34,7 @@ static int pkg_do(char *);
 static int sanity_check(char *);
 static char LogDir[FILENAME_MAX];
 static int zapLogDir;		/* Should we delete LogDir? */
+struct pkgdb *db = NULL;
 
 int
 pkg_perform(char **pkgs)

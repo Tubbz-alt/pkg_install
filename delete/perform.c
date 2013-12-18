@@ -30,6 +30,7 @@ static void sanity_check(char *);
 static void undepend(char *, char *);
 static char LogDir[FILENAME_MAX];
 
+struct pkgdb *db;
 
 int
 pkg_perform(char **pkgs)
@@ -40,7 +41,7 @@ pkg_perform(char **pkgs)
     struct reqr_by_entry *rb_entry;
     struct reqr_by_head *rb_list;
 
-    if (MatchType != MATCH_EXACT) {
+    if (MatchType != LEGACY_MATCH_EXACT) {
 	matched = matchinstalled(MatchType, pkgs, &errcode);
 	if (errcode != 0)
 	    return 1;
@@ -59,13 +60,13 @@ pkg_perform(char **pkgs)
 	    pkgs[i] = NULL;
 	}
 	else switch (MatchType) {
-	    case MATCH_GLOB:
+	    case LEGACY_MATCH_GLOB:
 		break;
-	    case MATCH_ALL:
+	    case LEGACY_MATCH_ALL:
 		warnx("no packages installed");
 		return 0;
-	    case MATCH_EREGEX:
-	    case MATCH_REGEX:
+	    case LEGACY_MATCH_EREGEX:
+	    case LEGACY_MATCH_REGEX:
 		warnx("no packages match pattern(s)");
 		return 1;
 	    default:

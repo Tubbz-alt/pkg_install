@@ -23,7 +23,7 @@
 #ifndef _INST_CREATE_H_INCLUDE
 #define _INST_CREATE_H_INCLUDE
 
-extern match_t	MatchType;
+extern legacy_match_t	MatchType;
 extern char	*Prefix;
 extern char	*Comment;
 extern char	*Desc;

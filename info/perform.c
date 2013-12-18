@@ -201,7 +201,7 @@ pkg_do(char *pkg)
 	}
 	if (Flags & SHOW_DESC) {
 	    if (!Quiet)
-		printf("%sDescription;\n", InfoPrefix)
+		printf("%sDescription;\n", InfoPrefix);
 	    pkg_printf("%e\n", p);
 	}
 	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p))

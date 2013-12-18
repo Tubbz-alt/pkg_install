@@ -35,7 +35,7 @@ Boolean	CleanDirs	= FALSE;
 Boolean	Interactive	= FALSE;
 Boolean	NoDeInstall	= FALSE;
 Boolean	Recursive	= FALSE;
-match_t	MatchType	= MATCH_GLOB;
+legacy_match_t	MatchType	= LEGACY_MATCH_GLOB;
 
 static void usage(void);
 
@@ -97,19 +97,19 @@ main(int argc, char **argv)
 	    break;
 
 	case 'a':
-	    MatchType = MATCH_ALL;
+	    MatchType = LEGACY_MATCH_ALL;
 	    break;
 
 	case 'G':
-	    MatchType = MATCH_EXACT;
+	    MatchType = LEGACY_MATCH_EXACT;
 	    break;
 
 	case 'x':
-	    MatchType = MATCH_REGEX;
+	    MatchType = LEGACY_MATCH_REGEX;
 	    break;
 
 	case 'X':
-	    MatchType = MATCH_EREGEX;
+	    MatchType = LEGACY_MATCH_EREGEX;
 	    break;
 
 	case 'i':
@@ -132,7 +132,7 @@ main(int argc, char **argv)
     /* Get all the remaining package names, if any */
     while (*argv) {
 	/* Don't try to apply heuristics if arguments are regexs */
-	if (MatchType != MATCH_REGEX)
+	if (MatchType != LEGACY_MATCH_REGEX)
 	    while ((pkgs_split = strrchr(*argv, (int)'/')) != NULL) {
 		*pkgs_split++ = '\0';
 		/*
@@ -140,7 +140,7 @@ main(int argc, char **argv)
 		 * package name.  Otherwise we've come across a trailing '/' and
 		 * need to continue our quest.
 		 */
-		if (isalnum(*pkgs_split) || ((MatchType == MATCH_GLOB) && \
+		if (isalnum(*pkgs_split) || ((MatchType == LEGACY_MATCH_GLOB) && \
 		    strpbrk(pkgs_split, "*?[]") != NULL)) {
 		    *argv = pkgs_split;
 		    break;
@@ -150,7 +150,7 @@ main(int argc, char **argv)
     }
 
     /* If no packages, yelp */
-    if (pkgs == start && MatchType != MATCH_ALL)
+    if (pkgs == start && MatchType != LEGACY_MATCH_ALL)
 	warnx("missing package name(s)"), usage();
     *pkgs = NULL;
     tmp = LOG_DIR;

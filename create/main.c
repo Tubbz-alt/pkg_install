@@ -18,7 +18,7 @@ __FBSDID("$FreeBSD: stable/10/usr.sbin/pkg_install/create/main.c 241830 2012-10-
 #include "lib.h"
 #include "create.h"
 
-match_t	MatchType	= MATCH_GLOB;
+legacy_match_t	MatchType	= LEGACY_MATCH_GLOB;
 char	*Prefix		= NULL;
 char	*Comment        = NULL;
 char	*Desc		= NULL;
@@ -81,15 +81,15 @@ main(int argc, char **argv)
 	    break;
 
 	case 'x':
-	    MatchType = MATCH_REGEX;
+	    MatchType = LEGACY_MATCH_REGEX;
 	    break;
 
 	case 'E':
-	    MatchType = MATCH_EREGEX;
+	    MatchType = LEGACY_MATCH_EREGEX;
 	    break;
 
 	case 'G':
-	    MatchType = MATCH_EXACT;
+	    MatchType = LEGACY_MATCH_EXACT;
 	    break;
 
 	case 'N':

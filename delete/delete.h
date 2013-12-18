@@ -30,6 +30,6 @@ extern Boolean	NoDeInstall;
 extern Boolean	Recursive;
 extern char	*Directory;
 extern char	*PkgName;
-extern match_t	MatchType;
+extern legacy_match_t	MatchType;
 
 #endif	/* _INST_DELETE_H_INCLUDE */

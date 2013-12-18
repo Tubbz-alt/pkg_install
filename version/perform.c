@@ -34,6 +34,8 @@ static struct index_head Index = SLIST_HEAD_INITIALIZER(Index);
 static int pkg_do(char *);
 static void show_version(Package, const char *, const char *);
 
+struct pkgdb *db = NULL;
+
 /*
  * This is the traditional pkg_perform, except that the argument is _not_ a
  * list of packages. It is the index file from the command line.
@@ -81,10 +83,10 @@ pkg_perform(char **indexarg)
     if (MatchName != NULL) {
 	pat[0] = MatchName;
 	pat[1] = NULL;
-	MatchType = RegexExtended ? MATCH_EREGEX : MATCH_REGEX;
+	MatchType = RegexExtended ? LEGACY_MATCH_EREGEX : LEGACY_MATCH_REGEX;
 	patterns = pat;
      } else {
-	MatchType = MATCH_ALL;
+	MatchType = LEGACY_MATCH_ALL;
 	patterns = NULL;
      }
 
@@ -101,11 +103,11 @@ pkg_perform(char **indexarg)
 	    return (1);
 	} else {
 	    switch (MatchType) {
-	    case MATCH_ALL:
+	    case LEGACY_MATCH_ALL:
 		warnx("no packages installed");
 		return (0);
-	    case MATCH_EREGEX:
-	    case MATCH_REGEX:
+	    case LEGACY_MATCH_EREGEX:
+	    case LEGACY_MATCH_REGEX:
 		warnx("no packages match pattern");
 		return (1);
 	    default:
@@ -391,7 +393,7 @@ version_match(char *pattern, const char *pkgname)
 	fp = stdin;
 	matchstream = -1;
     } else {
-	ret = pattern_match(MATCH_GLOB, pattern, pkgname);
+	ret = pattern_match(LEGACY_MATCH_GLOB, pattern, pkgname);
     }
 
     if (fp != NULL) {
@@ -411,9 +413,9 @@ version_match(char *pattern, const char *pkgname)
 	    if ((ch = strchr(ln, '|')) != NULL)
     		ch[0] = '\0';
 	    if (matchstream > 0)
-	    	match = pattern_match(MATCH_GLOB, pattern, ln);
+	    	match = pattern_match(LEGACY_MATCH_GLOB, pattern, ln);
 	    else
-	    	match = pattern_match(MATCH_GLOB, ln, pkgname);
+	    	match = pattern_match(LEGACY_MATCH_GLOB, ln, pkgname);
 	    if (match == 1) {
 		ret = 1;
 		printf("%.*s\n", (int)len, line);
