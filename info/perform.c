@@ -213,6 +213,7 @@ pkg_do(char *pkg)
 	}
 	if (Flags & SHOW_PLIST) {
 	    char *out = NULL;
+	    pkg_to_old(p);
 	    pkg_old_emit_content(p, &out);
 	    if (!Quiet)
 	        printf("%sPacking List:\n", InfoPrefix);
@@ -255,10 +256,11 @@ pkg_do(char *pkg)
 	       printf("%sOrigin:\n", InfoPrefix);
 	    pkg_printf("%o\n", p);
 	}
-	if (Flags & SHOW_FMTREV)
+	if (Flags & SHOW_FMTREV) {
 	    if (!Quiet)
 		printf("%sPacking list format revision:\n", InfoPrefix);
 	    printf("1.1\n");
+	}
 	if (!Quiet)
 	    puts(InfoPrefix);
     }
