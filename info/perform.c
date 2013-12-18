@@ -207,6 +207,7 @@ pkg_do(char *pkg)
 	    char *out = NULL;
 	    pkg_old_emit_content(p, &out);
 	    printf("%sPacking list:\n%s\n", InfoPrefix, out);
+	    free(out);
 	}
 	if (Flags & SHOW_REQUIRE && fexists(REQUIRE_FNAME))
 	    show_file("Requirements script:\n", REQUIRE_FNAME);
