@@ -199,14 +199,19 @@ pkg_do(char *pkg)
 	    while (pkg_rdeps(p, &d) == EPKG_OK)
 		pkg_printf("%rn-%rv\n", d, d);
 	}
-	if (Flags & SHOW_DESC)
-	    pkg_printf("%SDescription:\n%e\n", InfoPrefix, p);
+	if (Flags & SHOW_DESC) {
+	    if (!Quiet)
+		printf("%sDescription;\n", InfoPrefix)
+	    pkg_printf("%e\n", p);
+	}
 	if ((Flags & SHOW_DISPLAY) && pkg_has_message(p))
 		pkg_printf("%SInstall notice:\n%M\n", InfoPrefix, p);
 	if (Flags & SHOW_PLIST) {
 	    char *out = NULL;
 	    pkg_old_emit_content(p, &out);
-	    printf("%sPacking list:\n%s\n", InfoPrefix, out);
+	    if (!Quiet)
+	        printf("%sPacking List:\n", InfoPrefix);
+	    printf("%s\n", out);
 	    free(out);
 	}
 	if (Flags & SHOW_REQUIRE && fexists(REQUIRE_FNAME))
@@ -221,16 +226,23 @@ pkg_do(char *pkg)
 	    show_file("Post-DeInstall script:\n", POST_DEINSTALL_FNAME);
 	if ((Flags & SHOW_MTREE) && fexists(MTREE_FNAME))
 	    show_file("mtree file:\n", MTREE_FNAME);
-	if (Flags & SHOW_PREFIX)
-	    show_plist("Prefix(s):\n", &plist, PLIST_CWD, FALSE);
+	if (Flags & SHOW_PREFIX) {
+	    if (!Quiet)
+	        printf("%sPrefix(s):\n", InfoPrefix);
+	    pkg_printf("%p\n", InfoPrefix, p);
+	}
 	if (Flags & SHOW_FILES) {
-	    printf("%sFiles:\n", InfoPrefix);
+	    if (!Quiet)
+		    printf("%sFiles:\n", InfoPrefix);
 	    f = NULL;
 	    while (pkg_files(p, &f) == EPKG_OK)
 		pkg_printf("%Fn\n", f);
 	}
-	if ((Flags & SHOW_SIZE) && installed)
-	    show_size("Package Size:\n", &plist);
+	if ((Flags & SHOW_SIZE) && installed) {
+	    if (!Quiet)
+		printf("%sPackage SIze;\n", InfoPrefix);
+	    pkg_printf("%s\n", p);
+	}
 	if ((Flags & SHOW_CKSUM) && installed)
 	    code += show_cksum("Mismatched Checksums:\n", &plist);
 	if (Flags & SHOW_ORIGIN)
