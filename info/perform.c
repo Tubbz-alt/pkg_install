@@ -91,6 +91,7 @@ pkg_perform(char **pkgs)
 	err_cnt += pkg_do(pkgs[i]);
 
     pkgdb_close(db);
+    pkg_shutdown();
     return err_cnt;
 }
 
