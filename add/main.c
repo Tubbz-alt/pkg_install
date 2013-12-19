@@ -76,7 +76,7 @@ main(int argc, char **argv)
 {
     int ch, error;
     char **start;
-    char *cp, *packagesite = NULL, *remotepkg = NULL;
+    char *cp, *remotepkg = NULL;
     static char pkgaddpath[MAXPATHLEN];
 
     if (*argv[0] != '/' && strchr(argv[0], '/') != NULL)
@@ -196,8 +196,6 @@ main(int argc, char **argv)
 		    }
 		}
 	    }
-	    if (packagesite != NULL)
-		packagesite[0] = '\0';
 	}
     }
     /* If no packages, yelp */
