@@ -101,12 +101,12 @@ pkg_do(char *pkg)
     Boolean installed = FALSE, isTMP = FALSE;
     char fname[FILENAME_MAX];
     Package plist;
-    struct stat sb;
     const char *cp = NULL;
     int code = 0;
-    struct pkg *p;
+    struct pkg *p = NULL;
     struct pkg_dep *d;
     struct pkg_file *f;
+    struct pkg_manifest_key *keys = NULL;
 
     if (isURL(pkg)) {
 	if ((cp = fileGetURL(NULL, pkg, KeepPackage)) != NULL) {
@@ -136,23 +136,9 @@ pkg_do(char *pkg)
     }
     if (cp) {
 	if (!isURL(pkg)) {
-	    /*
-	     * Apply a crude heuristic to see how much space the package will
-	     * take up once it's unpacked.  I've noticed that most packages
-	     * compress an average of 75%, but we're only unpacking the + files so
-	     * be very optimistic.
-	     */
-	    if (stat(fname, &sb) == FAIL) {
-	        warnx("can't stat package file '%s'", fname);
-	        code = 1;
-	        return (0);
-	    }
-	    make_playpen(PlayPen, sb.st_size / 2);
-	    if (unpack(fname, "'+*'")) {
-		warnx("error during unpacking, no info for '%s' available", pkg);
-		code = 1;
-		return (0);
-	    }
+		pkg_manifest_keys_new(&keys);
+		pkg_open(&p, fname, keys, 0);
+		pkg_manifest_keys_free(keys);
 	}
     }
     /* It's not an uninstalled package, try and find it among the installed */
@@ -278,7 +264,6 @@ cleanup(int sig)
 
     if (!in_cleanup) {
 	in_cleanup = 1;
-	leave_playpen();
     }
     if (sig)
 	exit(1);
