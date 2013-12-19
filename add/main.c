@@ -133,8 +133,7 @@ main(int argc, char **argv)
 {
     int ch, error;
     char **start;
-    char *cp, *packagesite = NULL, *remotepkg = NULL, *ptr;
-    static char temppackageroot[MAXPATHLEN];
+    char *cp, *packagesite = NULL, *remotepkg = NULL;
     static char pkgaddpath[MAXPATHLEN];
 
     if (*argv[0] != '/' && strchr(argv[0], '/') != NULL)
@@ -225,28 +224,7 @@ main(int argc, char **argv)
 	for (ch = 0; *argv; ch++, argv++) {
 	    char temp[MAXPATHLEN];
     	    if (Remote) {
-		if ((packagesite = getpackagesite()) == NULL)
-		    errx(1, "package name too long");
-		if (strlcpy(temppackageroot, packagesite,
-		    sizeof(temppackageroot)) >= sizeof(temppackageroot))
-		    errx(1, "package name too long");
-		if (strlcat(temppackageroot, *argv, sizeof(temppackageroot))
-		    >= sizeof(temppackageroot))
-		    errx(1, "package name too long");
-		remotepkg = temppackageroot;
-		if (!((ptr = strrchr(remotepkg, '.')) && ptr[1] == 't' &&
-			(ptr[2] == 'b' || ptr[2] == 'g' || ptr[2] == 'x') &&
-			ptr[3] == 'z' && !ptr[4])) {
-    		    if (getenv("PACKAGESUFFIX")) {
-		       if (strlcat(remotepkg, getenv("PACKAGESUFFIX"),
-			   sizeof(temppackageroot)) >= sizeof(temppackageroot))
-			   errx(1, "package name too long");
-		    } else {
-		       if (strlcat(remotepkg, ".tbz",
-			   sizeof(temppackageroot)) >= sizeof(temppackageroot))
-			   errx(1, "package name too long");
-		    }
-		}
+		err(1, "Remote is not supported yet");
     	    }
 	    if (!strcmp(*argv, "-"))	/* stdin? */
 		pkgs[ch] = (char *)"-";
@@ -295,7 +273,6 @@ main(int argc, char **argv)
 	if (chroot("."))
 	    errx(1, "chroot to %s failed", Chroot);
     }
-    warnpkgng();
     /* Make sure the sub-execs we invoke get found */
     setenv("PATH", 
 	   "/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin",
