@@ -33,7 +33,6 @@ legacy_match_t	MatchType	= LEGACY_MATCH_GLOB;
 Boolean QUIET		= FALSE;
 Boolean UseBlkSz	= FALSE;
 char *InfoPrefix	= (char *)(uintptr_t)"";
-char PlayPen[FILENAME_MAX];
 char *CheckPkg		= NULL;
 char *LookUpOrigin	= NULL;
 Boolean KeepPackage	= FALSE;
@@ -195,7 +194,7 @@ main(int argc, char **argv)
 	    break;
 
 	case 't':
-	    strlcpy(PlayPen, optarg, sizeof(PlayPen));
+	    /* ignore on purpose */
 	    break;
 
 	case 'x':

@@ -66,7 +66,6 @@ extern Boolean QUIET;
 extern Boolean UseBlkSz;
 extern Boolean KeepPackage;
 extern char *InfoPrefix;
-extern char PlayPen[];
 extern char *CheckPkg;
 extern char *LookUpOrigin;
 extern legacy_match_t MatchType;
