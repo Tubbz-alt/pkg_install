@@ -79,6 +79,7 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
 
     if (patterns != NULL && MatchType == LEGACY_MATCH_ALL) {
 	    if ((it = pkgdb_query(db, NULL, MATCH_ALL)) == NULL) {
+		*retval = 1;
 		return (NULL);
 	    }
 
@@ -121,9 +122,10 @@ matchinstalled(legacy_match_t MatchType, char **patterns, int *retval)
     	}
     }
     
-    if (store->used == 0)
+    if (store->used == 0) {
+	*retval = 1;
 	return NULL;
-    else
+    } else
 	return store->store;
 }
 
